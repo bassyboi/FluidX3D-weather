@@ -1,11 +1,10 @@
 #include "grid.hpp"
 
-Grid::Grid(const std::array<int,3>& size_) : size(size_) {
 #include <limits>
-#include "grid.hpp"
+#include <stdexcept>
 
 Grid::Grid(const std::array<int,3>& size_) : size(size_) {
-    // Check for overflow before multiplying
+    // Check for overflow before multiplying dimensions
     std::size_t s0 = static_cast<std::size_t>(size[0]);
     std::size_t s1 = static_cast<std::size_t>(size[1]);
     std::size_t s2 = static_cast<std::size_t>(size[2]);
@@ -22,3 +21,4 @@ Grid::Grid(const std::array<int,3>& size_) : size(size_) {
     v.assign(N, 0.0);
     w.assign(N, 0.0);
 }
+

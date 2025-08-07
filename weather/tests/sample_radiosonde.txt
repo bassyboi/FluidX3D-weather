@@ -1,0 +1,3 @@
+# pressure temperature humidity
+1000 290 50
+900 280 60

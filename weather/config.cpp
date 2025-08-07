@@ -3,6 +3,7 @@
 #include <regex>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 
 namespace {
 std::string trim(const std::string& s) {
@@ -19,6 +20,12 @@ Config load_config(const std::string& path) {
     if (!file) {
         throw std::runtime_error("Failed to open config: " + path);
     }
+
+    // Map of floating point fields for easy assignment
+    std::unordered_map<std::string, double*> float_fields{
+        {"timestep", &cfg.timestep}
+    };
+
     std::string line;
     std::regex domain_re(R"(domain_size\s*=\s*\[(\d+),\s*(\d+),\s*(\d+)\])");
     std::regex float_re(R"((\w+)\s*=\s*([0-9]*\.?[0-9]+))");
@@ -31,7 +38,8 @@ Config load_config(const std::string& path) {
         std::smatch m;
         if (std::regex_match(line, m, domain_re)) {
             cfg.domain_size = {std::stoi(m[1]), std::stoi(m[2]), std::stoi(m[3])};
-        } else if (std::regex_match(line, m, float_re) && m[1] == "timestep") {
+        } else if (std::regex_match(line, m, int_re) && m[1] == "run_steps") {
+            cfg.run_steps = std::stoi(m[2]);
         } else if (std::regex_match(line, m, float_re)) {
             auto it = float_fields.find(m[1]);
             if (it != float_fields.end()) {
@@ -47,8 +55,6 @@ Config load_config(const std::string& path) {
             else if (key == "aws_file") cfg.aws_file = val;
             else if (key == "terrain_file") cfg.terrain_file = val;
             else if (key == "output_dir") cfg.output_dir = val;
-        } else if (std::regex_match(line, m, int_re) && m[1] == "run_steps") {
-            cfg.run_steps = std::stoi(m[2]);
         }
     }
     return cfg;
