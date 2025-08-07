@@ -1,0 +1,9 @@
+domain_size = [100, 100, 60]
+timestep = 1.0
+use_gfs = true
+gfs_file = "data/gfs_20250806.grib2"
+radiosonde_file = "data/oakey_sounding.txt"
+aws_file = "data/brookstead_aws.csv"
+terrain_file = "data/terrain.png"
+output_dir = "output/"
+run_steps = 3600
