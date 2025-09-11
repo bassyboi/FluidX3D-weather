@@ -32,11 +32,7 @@ Config load_config(const std::string& path) {
         if (std::regex_match(line, m, domain_re)) {
             cfg.domain_size = {std::stoi(m[1]), std::stoi(m[2]), std::stoi(m[3])};
         } else if (std::regex_match(line, m, float_re) && m[1] == "timestep") {
-        } else if (std::regex_match(line, m, float_re)) {
-            auto it = float_fields.find(m[1]);
-            if (it != float_fields.end()) {
-                *(it->second) = std::stod(m[2]);
-            }
+            cfg.timestep = std::stod(m[2]);
         } else if (std::regex_match(line, m, bool_re) && m[1] == "use_gfs") {
             cfg.use_gfs = (m[2] == "true");
         } else if (std::regex_match(line, m, string_re)) {

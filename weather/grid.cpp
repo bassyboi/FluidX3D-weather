@@ -1,8 +1,6 @@
 #include "grid.hpp"
-
-Grid::Grid(const std::array<int,3>& size_) : size(size_) {
 #include <limits>
-#include "grid.hpp"
+#include <stdexcept>
 
 Grid::Grid(const std::array<int,3>& size_) : size(size_) {
     // Check for overflow before multiplying
