@@ -1,9 +1,48 @@
-domain_size = [100, 100, 60]
-timestep = 1.0
-use_gfs = true
-gfs_file = "data/gfs_20250806.grib2"
-radiosonde_file = "data/oakey_sounding.txt"
-aws_file = "data/brookstead_aws.csv"
-terrain_file = "data/terrain.png"
+# FluidX3D-Weather Configuration
+# ===============================
+
+# Grid dimensions (number of cells)
+domain_size = [80, 80, 40]
+
+# Grid spacing [meters]
+dx = 2000.0
+dy = 2000.0
+dz_base = 250.0
+
+# Time stepping
+timestep = 2.0
+run_steps = 1800
+output_interval = 60
+
+# Physics parameters
+latitude = -27.5
+Km = 500.0
+Kh = 500.0
+sponge_levels = 5
+solar_angle = 0.785
+
+# Terrain
+terrain_file = ""
+terrain_max_height = 1000.0
+
+# Data ingestion (set paths to enable, leave empty to use defaults)
+use_gfs = false
+gfs_file = ""
+radiosonde_file = ""
+aws_file = ""
+
+# Output
 output_dir = "output/"
-run_steps = 3600
+output_vtk = true
+output_csv = true
+
+# Initial conditions (used when no data files provided)
+init_wind_u = 5.0
+init_wind_v = 2.0
+init_theta_surface = 300.0
+init_qv_surface = 0.012
+
+# Warm bubble convection test
+add_warm_bubble = true
+bubble_dtheta = 3.0
+bubble_radius = 10000.0
