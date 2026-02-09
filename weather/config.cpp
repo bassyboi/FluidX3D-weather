@@ -1,55 +1,93 @@
 #include "config.hpp"
 #include <fstream>
-#include <regex>
-#include <stdexcept>
-#include <string>
+#include <sstream>
+#include <iostream>
+#include <algorithm>
 
 namespace {
+
 std::string trim(const std::string& s) {
-    const auto start = s.find_first_not_of(" \t");
+    auto start = s.find_first_not_of(" \t\r\n");
     if (start == std::string::npos) return "";
-    const auto end = s.find_last_not_of(" \t");
+    auto end = s.find_last_not_of(" \t\r\n");
     return s.substr(start, end - start + 1);
 }
+
+std::string unquote(const std::string& s) {
+    if (s.size() >= 2 && s.front() == '"' && s.back() == '"')
+        return s.substr(1, s.size() - 2);
+    return s;
 }
+
+} // anonymous namespace
 
 Config load_config(const std::string& path) {
     Config cfg;
     std::ifstream file(path);
     if (!file) {
-        throw std::runtime_error("Failed to open config: " + path);
+        std::cerr << "Warning: Could not open config file '" << path
+                  << "', using defaults.\n";
+        return cfg;
     }
+
     std::string line;
-    std::regex domain_re(R"(domain_size\s*=\s*\[(\d+),\s*(\d+),\s*(\d+)\])");
-    std::regex float_re(R"((\w+)\s*=\s*([0-9]*\.?[0-9]+))");
-    std::regex bool_re(R"((\w+)\s*=\s*(true|false))");
-    std::regex string_re(R"regex((\w+)\s*=\s*"([^"]*)")regex");
-    std::regex int_re(R"((\w+)\s*=\s*(\d+))");
     while (std::getline(file, line)) {
         line = trim(line);
         if (line.empty() || line[0] == '#') continue;
-        std::smatch m;
-        if (std::regex_match(line, m, domain_re)) {
-            cfg.domain_size = {std::stoi(m[1]), std::stoi(m[2]), std::stoi(m[3])};
-        } else if (std::regex_match(line, m, float_re) && m[1] == "timestep") {
-        } else if (std::regex_match(line, m, float_re)) {
-            auto it = float_fields.find(m[1]);
-            if (it != float_fields.end()) {
-                *(it->second) = std::stod(m[2]);
-            }
-        } else if (std::regex_match(line, m, bool_re) && m[1] == "use_gfs") {
-            cfg.use_gfs = (m[2] == "true");
-        } else if (std::regex_match(line, m, string_re)) {
-            std::string key = m[1];
-            std::string val = m[2];
-            if (key == "gfs_file") cfg.gfs_file = val;
-            else if (key == "radiosonde_file") cfg.radiosonde_file = val;
-            else if (key == "aws_file") cfg.aws_file = val;
-            else if (key == "terrain_file") cfg.terrain_file = val;
-            else if (key == "output_dir") cfg.output_dir = val;
-        } else if (std::regex_match(line, m, int_re) && m[1] == "run_steps") {
-            cfg.run_steps = std::stoi(m[2]);
+
+        auto eq = line.find('=');
+        if (eq == std::string::npos) continue;
+
+        std::string key = trim(line.substr(0, eq));
+        std::string val = trim(line.substr(eq + 1));
+
+        // Handle array syntax: domain_size = [100, 100, 60]
+        if (key == "domain_size") {
+            std::string nums = val;
+            nums.erase(std::remove(nums.begin(), nums.end(), '['), nums.end());
+            nums.erase(std::remove(nums.begin(), nums.end(), ']'), nums.end());
+            std::istringstream iss(nums);
+            char comma;
+            iss >> cfg.nx >> comma >> cfg.ny >> comma >> cfg.nz;
+            continue;
+        }
+
+        std::string sv = unquote(val);
+
+        if      (key == "nx")                cfg.nx = std::stoi(val);
+        else if (key == "ny")                cfg.ny = std::stoi(val);
+        else if (key == "nz")                cfg.nz = std::stoi(val);
+        else if (key == "dx")                cfg.dx = std::stod(val);
+        else if (key == "dy")                cfg.dy = std::stod(val);
+        else if (key == "dz_base")           cfg.dz_base = std::stod(val);
+        else if (key == "timestep")          cfg.timestep = std::stod(val);
+        else if (key == "run_steps")         cfg.run_steps = std::stoi(val);
+        else if (key == "output_interval")   cfg.output_interval = std::stoi(val);
+        else if (key == "latitude")          cfg.latitude = std::stod(val);
+        else if (key == "Km")               cfg.Km = std::stod(val);
+        else if (key == "Kh")               cfg.Kh = std::stod(val);
+        else if (key == "sponge_levels")     cfg.sponge_levels = std::stoi(val);
+        else if (key == "solar_angle")       cfg.solar_angle = std::stod(val);
+        else if (key == "terrain_file")      cfg.terrain_file = sv;
+        else if (key == "terrain_max_height") cfg.terrain_max_height = std::stod(val);
+        else if (key == "use_gfs")           cfg.use_gfs = (val == "true" || val == "1");
+        else if (key == "gfs_file")          cfg.gfs_file = sv;
+        else if (key == "radiosonde_file")   cfg.radiosonde_file = sv;
+        else if (key == "aws_file")          cfg.aws_file = sv;
+        else if (key == "output_dir")        cfg.output_dir = sv;
+        else if (key == "output_vtk")        cfg.output_vtk = (val == "true" || val == "1");
+        else if (key == "output_csv")        cfg.output_csv = (val == "true" || val == "1");
+        else if (key == "init_wind_u")       cfg.init_wind_u = std::stod(val);
+        else if (key == "init_wind_v")       cfg.init_wind_v = std::stod(val);
+        else if (key == "init_theta_surface") cfg.init_theta_surface = std::stod(val);
+        else if (key == "init_qv_surface")   cfg.init_qv_surface = std::stod(val);
+        else if (key == "add_warm_bubble")   cfg.add_warm_bubble = (val == "true" || val == "1");
+        else if (key == "bubble_dtheta")     cfg.bubble_dtheta = std::stod(val);
+        else if (key == "bubble_radius")     cfg.bubble_radius = std::stod(val);
+        else {
+            std::cerr << "Warning: Unknown config key '" << key << "'\n";
         }
     }
+
     return cfg;
 }

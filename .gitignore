@@ -6,3 +6,8 @@ FluidX3D.vcxproj.user
 target/
 weather/weather_sim
 weather/tests/config_test
+weather/build/
+weather/bin/
+output/
+test_output/
+*.o
